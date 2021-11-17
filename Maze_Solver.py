@@ -51,18 +51,29 @@ class Maze_Solver:
 
         
 
-    def move_choices(self, x, y):
+    def move_choices(self, x, y, id):
 
         if self.maze[x][y] == self.wall:
             return []
         
         positions = []
-
-        if x > 0  and self.maze[x-1][y] == self.assigned: positions.append('up')
-        if x < self.width - 1 and self.maze[x+1][y] == self.assigned: positions.append('down')
-        if y > 0 and self.maze[x][y-1] == self.assigned: positions.append('left')      
-        if y < self.height - 1 and self.maze[x][y+1] == self.assigned: positions.append('right')
-
+        def check_diff(x,y,id):
+            name = self.make_name(x,y)
+            if name not in self.nodeList:
+                return True
+            return self.nodeList[name] != id
+        if x > 0  and (self.maze[x-1][y] in [self.assigned, self.node]): 
+            if check_diff(x-1,y,id):
+                positions.append('up')
+        if x < self.width - 1 and self.maze[x+1][y] in [self.assigned, self.node]: 
+            if check_diff(x+1,y,id):
+                positions.append('down')
+        if y > 0 and self.maze[x][y-1] in [self.assigned, self.node]: 
+            if check_diff(x,y-1,id):
+                positions.append('left')     
+        if y < self.height - 1 and self.maze[x][y+1] in [self.assigned, self.node]:
+            if check_diff(x,y+1,id):
+                positions.append('right')
         return positions
 
 
@@ -73,7 +84,7 @@ class Maze_Solver:
                 if locId in self.nodeList:
                     continue
 
-                choices = self.move_choices(i,j)
+                choices = self.move_choices(i,j, None)
 
                 if len(choices) > 2:
                     id = len(self.nodeList)
@@ -90,7 +101,7 @@ class Maze_Solver:
         self.maze[x][y] = self.node
         currentId = self.nodeList[self.make_name(x,y)]
         while True:
-            positions = self.move_choices(x,y)
+            positions = self.move_choices(x,y, None)
             if not positions:
                 break
             
@@ -98,7 +109,7 @@ class Maze_Solver:
             path = []
             while True:
             
-                positions = self.move_choices(i,j)
+                positions = self.move_choices(i,j, currentId)
                 
                 if not positions:
                     break
@@ -175,12 +186,13 @@ class Maze_Solver:
         nodes = {}
 
         for name in self.ids:
-            nodes[name] = {}
+            nodes[name] = []
             for conn in self.ids[name]['connections']:
-                nodes[name][conn['id']] = {
-                    'location': self.ids[conn['id']]['location'],
-                    'cost': len(conn['path'])
-                }
+                nodes[name].append({
+                    'id': conn['id'],
+                    'location': self.ids[conn['id']]['location']
+                    # 'cost': len(conn['path'])
+                })
         
         return nodes
     
